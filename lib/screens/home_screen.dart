@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/expense_provider.dart';
+import '../l10n/app_localizations.dart';
 import 'transactions_screen.dart';
 import 'statistics_screen.dart';
 import 'budget_screen.dart';
@@ -22,29 +23,6 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
     const StatisticsScreen(),
     const BudgetScreen(),
     const SettingsScreen(),
-  ];
-
-  final List<NavigationDestination> _destinations = const [
-    NavigationDestination(
-      icon: Icon(Icons.receipt_long_outlined),
-      selectedIcon: Icon(Icons.receipt_long),
-      label: 'Transactions',
-    ),
-    NavigationDestination(
-      icon: Icon(Icons.bar_chart_outlined),
-      selectedIcon: Icon(Icons.bar_chart),
-      label: 'Statistics',
-    ),
-    NavigationDestination(
-      icon: Icon(Icons.account_balance_wallet_outlined),
-      selectedIcon: Icon(Icons.account_balance_wallet),
-      label: 'Budget',
-    ),
-    NavigationDestination(
-      icon: Icon(Icons.settings_outlined),
-      selectedIcon: Icon(Icons.settings),
-      label: 'Settings',
-    ),
   ];
 
   @override
@@ -73,7 +51,31 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
+    
+    final List<NavigationDestination> destinations = [
+      NavigationDestination(
+        icon: const Icon(Icons.receipt_long_outlined),
+        selectedIcon: const Icon(Icons.receipt_long),
+        label: l10n.transactions,
+      ),
+      NavigationDestination(
+        icon: const Icon(Icons.bar_chart_outlined),
+        selectedIcon: const Icon(Icons.bar_chart),
+        label: l10n.statistics,
+      ),
+      NavigationDestination(
+        icon: const Icon(Icons.account_balance_wallet_outlined),
+        selectedIcon: const Icon(Icons.account_balance_wallet),
+        label: l10n.budget,
+      ),
+      NavigationDestination(
+        icon: const Icon(Icons.settings_outlined),
+        selectedIcon: const Icon(Icons.settings),
+        label: l10n.settings,
+      ),
+    ];
     
     return Scaffold(
       body: TabBarView(
@@ -99,7 +101,7 @@ class _HomeScreenState extends State<HomeScreen> with SingleTickerProviderStateM
             onDestinationSelected: _onItemTapped,
             backgroundColor: Colors.transparent,
             indicatorColor: theme.colorScheme.primaryContainer.withOpacity(0.7),
-            destinations: _destinations,
+            destinations: destinations,
             labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
             animationDuration: const Duration(milliseconds: 400),
           ),

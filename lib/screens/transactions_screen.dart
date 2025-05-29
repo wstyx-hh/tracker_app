@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../l10n/app_localizations.dart';
 import '../services/isar_service.dart';
 import '../models/income.dart';
 import '../models/expense_hive.dart';
@@ -32,6 +33,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
   };
 
   void _selectDateRange() async {
+    final l10n = AppLocalizations.of(context);
     final DateTimeRange? picked = await showDateRangePicker(
       context: context,
       firstDate: DateTime(2020),
@@ -73,16 +75,16 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return DefaultTabController(
       length: 3,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Transactions'),
+          title: Text(l10n.transactions),
           actions: [
             IconButton(
-              icon: const Icon(Icons.date_range),
+              icon: const Icon(Icons.calendar_today),
               onPressed: _selectDateRange,
-              tooltip: 'Select Date Range',
             ),
           ],
           bottom: TabBar(

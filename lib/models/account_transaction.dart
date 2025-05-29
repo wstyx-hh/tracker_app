@@ -9,6 +9,8 @@ class AccountTransaction {
   late String description;
   late DateTime date;
   late String type; // 'deposit', 'withdrawal', 'transfer'
+  late String category;
+  late bool isExpense;
 
   AccountTransaction();
   AccountTransaction.create({
@@ -17,6 +19,8 @@ class AccountTransaction {
     required this.description,
     required this.date,
     required this.type,
+    required this.category,
+    required this.isExpense,
   });
 
   Map<String, dynamic> toJson() => {
@@ -25,5 +29,7 @@ class AccountTransaction {
     'description': description,
     'date': date.toIso8601String(),
     'type': type,
+    'category': category,
+    'isExpense': isExpense,
   };
 } 

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'translations/en.dart';
 import 'translations/ru.dart';
-import 'translations/kk.dart';
 
 class AppLocalizations {
   final Locale locale;
@@ -16,7 +15,6 @@ class AppLocalizations {
   static final Map<String, Map<String, String>> _localizedValues = {
     'en': en,
     'ru': ru,
-    'kk': kk,
   };
 
   String get language {
@@ -231,13 +229,9 @@ class AppLocalizations {
     return _localizedValues[locale.languageCode]?['thisActionCannot'] ?? 'This action cannot be undone';
   }
 
-  String get noData {
-    return _localizedValues[locale.languageCode]?['noData'] ?? 'No data available';
-  }
+  String get noData => _localizedValues[locale.languageCode]?['noData'] ?? 'No data available';
 
-  String get selectDate {
-    return _localizedValues[locale.languageCode]?['selectDate'] ?? 'Select Date';
-  }
+  String get selectDate => _localizedValues[locale.languageCode]?['selectDate'] ?? 'Select Date';
 
   String get selectCategory {
     return _localizedValues[locale.languageCode]?['selectCategory'] ?? 'Select Category';
@@ -327,10 +321,50 @@ class AppLocalizations {
     return _localizedValues[locale.languageCode]?['entertainment'] ?? 'Entertainment';
   }
 
+  String get health {
+    return _localizedValues[locale.languageCode]?['Health'] ?? 'Health';
+  }
+
+  String get transportation {
+    return _localizedValues[locale.languageCode]?['Transportation'] ?? 'Transportation';
+  }
+
+  String get food {
+    return _localizedValues[locale.languageCode]?['Food'] ?? 'Food';
+  }
+
+  String get education {
+    return _localizedValues[locale.languageCode]?['Education'] ?? 'Education';
+  }
+
+  String get other {
+    return _localizedValues[locale.languageCode]?['Other'] ?? 'Other';
+  }
+
+  String get card {
+    return _localizedValues[locale.languageCode]?['Card'] ?? 'Card';
+  }
+
+  String get cash {
+    return _localizedValues[locale.languageCode]?['Cash'] ?? 'Cash';
+  }
+
+  String get about {
+    return _localizedValues[locale.languageCode]?['about'] ?? 'About';
+  }
+
+  String get profile {
+    return _localizedValues[locale.languageCode]?['profile'] ?? 'Profile';
+  }
+
+  String get addYourFirstTransaction {
+    return _localizedValues[locale.languageCode]?['addYourFirstTransaction'] ?? 'Add your first transaction';
+  }
+
   String formatCurrency(double amount) {
     final format = NumberFormat.currency(
-      locale: locale.toString(),
-      symbol: '\$',
+      locale: locale.languageCode == 'ru' ? 'ru_RU' : 'en_US',
+      symbol: _currency,
       decimalDigits: 2,
     );
     return format.format(amount);
@@ -338,5 +372,14 @@ class AppLocalizations {
 
   String formatDate(DateTime date) {
     return DateFormat.yMMMd(locale.toString()).format(date);
+  }
+
+  String get _currency {
+    switch (locale.languageCode) {
+      case 'ru':
+        return '₽';
+      default:
+        return '\$';
+    }
   }
 } 

@@ -5,8 +5,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import '../providers/theme_provider.dart';
+import '../providers/locale_provider.dart';
 import '../services/isar_service.dart';
 import '../widgets/theme_selector.dart';
+import '../widgets/language_selector.dart';
+import '../l10n/app_localizations.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -55,8 +58,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _save() async {
+    final l10n = AppLocalizations.of(context);
     await IsarService().setAccountName(_nameController.text.trim());
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Account name updated')));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(l10n.accountName))
+    );
   }
 
   Future<void> _exportData() async {
@@ -84,12 +90,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
     if (_loading) {
       return Scaffold(
         body: Center(
           child: CircularProgressIndicator(
-            color: Theme.of(context).colorScheme.primary,
+            color: theme.colorScheme.primary,
           ),
         ),
       );
@@ -97,8 +105,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Settings'),
-        elevation: 0,
+        title: Text(l10n.settings),
       ),
       body: Container(
         decoration: BoxDecoration(
@@ -106,14 +113,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Theme.of(context).colorScheme.background,
-              Theme.of(context).colorScheme.background.withOpacity(0.8),
+              theme.colorScheme.background,
+              theme.colorScheme.background.withOpacity(0.8),
             ],
           ),
         ),
         child: ListView(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
           children: [
+            const LanguageSelector(),
+            const Divider(height: 1),
+            const ThemeSelector(),
+            const Divider(height: 1),
             _buildProfileSection(),
             const SizedBox(height: 24),
             Card(
@@ -125,19 +136,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             const SizedBox(height: 24),
             _buildSection(
-              title: 'Preferences',
+              title: l10n.preferences,
               icon: Icons.settings_outlined,
               children: [
                 _buildSettingsTile(
-                  title: 'Currency',
+                  title: l10n.currency,
                   subtitle: _currency,
                   icon: Icons.attach_money_outlined,
                   onTap: () => _showCurrencyPicker(),
                 ),
                 const SizedBox(height: 16),
                 _buildAnimatedSwitch(
-                  title: 'Notifications',
-                  subtitle: 'Enable expense reminders',
+                  title: l10n.notifications,
+                  subtitle: l10n.enableExpenseReminders,
                   value: _notificationsEnabled,
                   onChanged: (value) {
                     setState(() => _notificationsEnabled = value);
@@ -148,26 +159,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             const SizedBox(height: 24),
             _buildSection(
-              title: 'Data Management',
+              title: l10n.data,
               icon: Icons.storage_outlined,
               children: [
                 _buildActionButton(
-                  title: 'Export Data',
-                  subtitle: 'Backup your expense data',
+                  title: l10n.exportData,
+                  subtitle: l10n.exportData,
                   icon: Icons.download_outlined,
                   onTap: _exportData,
                 ),
                 const SizedBox(height: 16),
                 _buildActionButton(
-                  title: 'Import Data',
-                  subtitle: 'Restore from backup',
+                  title: l10n.importData,
+                  subtitle: l10n.importData,
                   icon: Icons.upload_outlined,
                   onTap: _importData,
                 ),
                 const SizedBox(height: 16),
                 _buildActionButton(
-                  title: 'Clear All Data',
-                  subtitle: 'Delete all your expense data',
+                  title: l10n.clearData,
+                  subtitle: l10n.thisActionCannot,
                   icon: Icons.delete_outline,
                   isDestructive: true,
                   onTap: () => _showDeleteConfirmation(),
@@ -176,17 +187,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             const SizedBox(height: 24),
             _buildSection(
-              title: 'About',
+              title: l10n.about,
               icon: Icons.info_outline,
               children: [
                 _buildInfoTile(
-                  title: 'Version',
+                  title: l10n.version,
                   content: '1.0.0',
                   icon: Icons.new_releases_outlined,
                 ),
                 const SizedBox(height: 16),
                 _buildSettingsTile(
-                  title: 'Privacy Policy',
+                  title: l10n.privacyPolicy,
                   icon: Icons.privacy_tip_outlined,
                   onTap: () {
                     // TODO: Show privacy policy
@@ -194,7 +205,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
                 const SizedBox(height: 16),
                 _buildSettingsTile(
-                  title: 'Terms of Service',
+                  title: l10n.termsOfService,
                   icon: Icons.description_outlined,
                   onTap: () {
                     // TODO: Show terms of service
@@ -209,15 +220,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   Widget _buildProfileSection() {
+    final l10n = AppLocalizations.of(context);
     return _buildSection(
-      title: 'Profile',
+      title: l10n.profile,
       icon: Icons.person_outline,
       children: [
         TextField(
           controller: _nameController,
-          decoration: const InputDecoration(
-            labelText: 'Account Name',
-            hintText: 'Enter your name',
+          decoration: InputDecoration(
+            labelText: l10n.accountName,
+            hintText: l10n.enterTitle,
           ),
           onEditingComplete: _save,
         ),
@@ -446,6 +458,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _showCurrencyPicker() {
+    final l10n = AppLocalizations.of(context);
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -468,7 +481,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
             const SizedBox(height: 24),
             Text(
-              'Select Currency',
+              l10n.selectCurrency,
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 16),
@@ -491,20 +504,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   void _showDeleteConfirmation() {
+    final l10n = AppLocalizations.of(context);
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(24),
         ),
-        title: const Text('Clear All Data'),
-        content: const Text(
-          'Are you sure you want to delete all your expense data? This action cannot be undone.',
-        ),
+        title: Text(l10n.clearData),
+        content: Text(l10n.thisActionCannot),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
+            child: Text(l10n.cancel),
           ),
           TextButton(
             onPressed: () async {
@@ -512,7 +524,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               await _clearAllData();
             },
             child: Text(
-              'Delete',
+              l10n.delete,
               style: TextStyle(
                 color: Theme.of(context).colorScheme.error,
               ),

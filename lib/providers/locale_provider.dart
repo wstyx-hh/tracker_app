@@ -8,13 +8,11 @@ class LocaleProvider with ChangeNotifier {
   final List<Locale> supportedLocales = [
     const Locale('en'), // English
     const Locale('ru'), // Russian
-    const Locale('kk'), // Kazakh
   ];
 
   final Map<String, String> languageNames = {
     'en': 'English',
     'ru': 'Русский',
-    'kk': 'Қазақша',
   };
 
   Locale _currentLocale = const Locale('en'); // Set English as default

@@ -5,6 +5,7 @@ import 'dart:math' show min, max;
 import '../models/expense_hive.dart';
 import '../models/income.dart';
 import '../services/isar_service.dart';
+import '../l10n/app_localizations.dart';
 
 final dateFormat = DateFormat('dd.MM.yyyy');
 
@@ -20,6 +21,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   DateTime _endDate = DateTime.now();
 
   void _selectDateRange() async {
+    final l10n = AppLocalizations.of(context);
     final DateTimeRange? picked = await showDateRangePicker(
       context: context,
       firstDate: DateTime(2020),
@@ -96,6 +98,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     
     return FutureBuilder(
       future: Future.wait([
@@ -105,7 +108,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       builder: (context, AsyncSnapshot<List<dynamic>> snapshot) {
         if (!snapshot.hasData) {
           return Scaffold(
-            appBar: AppBar(title: const Text('Statistics')),
+            appBar: AppBar(title: Text(l10n.statistics)),
             body: Center(
               child: CircularProgressIndicator(
                 color: theme.colorScheme.primary,
@@ -126,12 +129,12 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
         return Scaffold(
           appBar: AppBar(
-            title: const Text('Statistics'),
+            title: Text(l10n.statistics),
             actions: [
               IconButton(
                 icon: const Icon(Icons.date_range),
                 onPressed: _selectDateRange,
-                tooltip: 'Select Date Range',
+                tooltip: l10n.changeDateRange,
               ),
             ],
           ),
@@ -166,6 +169,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     required double balance,
   }) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     
     return Card(
       elevation: 4,
@@ -181,7 +185,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Financial Summary',
+                  l10n.overview,
                   style: theme.textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
@@ -200,7 +204,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 Expanded(
                   child: _buildSummaryItem(
                     icon: Icons.arrow_upward,
-                    label: 'Income',
+                    label: l10n.income,
                     amount: totalIncomes,
                     isPositive: true,
                   ),
@@ -209,7 +213,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 Expanded(
                   child: _buildSummaryItem(
                     icon: Icons.arrow_downward,
-                    label: 'Expenses',
+                    label: l10n.expenses,
                     amount: totalExpenses,
                     isPositive: false,
                   ),
@@ -243,7 +247,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Balance',
+                  l10n.balance,
                   style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
@@ -270,6 +274,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     required bool isPositive,
   }) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final color = isPositive ? Colors.green : Colors.red;
     
     return Container(
@@ -315,6 +320,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
   Widget _buildCategoryChart(Map<String, double> categoryTotals, double totalExpenses) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     
     return Card(
       elevation: 4,
@@ -327,7 +333,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Expenses by Category',
+              l10n.expensesByCategory,
               style: theme.textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.bold,
               ),
@@ -411,6 +417,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
   Widget _buildDailyExpensesChart(List<FlSpot> dailyExpenses) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final maxY = dailyExpenses.isEmpty ? 100.0 : dailyExpenses.map((e) => e.y).reduce(max) * 1.2;
     final minY = dailyExpenses.isEmpty ? 0.0 : dailyExpenses.map((e) => e.y).reduce(min) * 0.8;
     
@@ -439,7 +446,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               Padding(
                 padding: const EdgeInsets.only(left: 8),
                 child: Text(
-                  'Daily Expenses',
+                  l10n.dailyExpenses,
                   style: theme.textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
                     fontSize: 24,
@@ -481,7 +488,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                       ),
                       leftTitles: AxisTitles(
                         axisNameWidget: Text(
-                          'Amount',
+                          l10n.amount,
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: theme.colorScheme.onSurface.withOpacity(0.6),
                           ),
@@ -503,7 +510,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                       ),
                       bottomTitles: AxisTitles(
                         axisNameWidget: Text(
-                          'Day of Month',
+                          l10n.date,
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: theme.colorScheme.onSurface.withOpacity(0.6),
                           ),
@@ -659,6 +666,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
   Widget _buildEmptyState() {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     
     return Center(
       child: Padding(
@@ -673,14 +681,14 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              'No expenses yet',
+              l10n.noData,
               style: theme.textTheme.titleMedium?.copyWith(
                 color: theme.colorScheme.onSurface.withOpacity(0.6),
               ),
             ),
             const SizedBox(height: 8),
             Text(
-              'Start adding expenses to see your statistics',
+              l10n.addYourFirstTransaction,
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: theme.colorScheme.onSurface.withOpacity(0.4),
