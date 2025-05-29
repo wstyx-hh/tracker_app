@@ -4,27 +4,9 @@ import 'package:google_fonts/google_fonts.dart';
 import 'screens/home_screen.dart';
 import 'providers/expense_provider.dart';
 import 'providers/theme_provider.dart';
-import 'package:hive_flutter/hive_flutter.dart';
-import 'models/income.dart';
-import 'models/expense_hive.dart';
-import 'models/account.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // Initialize Hive
-  await Hive.initFlutter();
-
-  // Register adapters
-  Hive.registerAdapter(IncomeAdapter());
-  Hive.registerAdapter(ExpenseHiveAdapter());
-  Hive.registerAdapter(AccountAdapter());
-
-  // Open boxes with persistence
-  await Hive.openBox<Income>('incomes');
-  await Hive.openBox<ExpenseHive>('expenses');
-  await Hive.openBox<Account>('accounts');
-
   runApp(const MyApp());
 }
 

@@ -3,7 +3,10 @@ import 'package:intl/intl.dart';
 import '../models/income.dart';
 import '../models/expense_hive.dart';
 import '../models/account.dart';
-import '../services/hive_service.dart';
+import '../models/account_transaction.dart';
+import '../services/isar_service.dart';
+
+final dateFormat = DateFormat('dd.MM.yyyy');
 
 class AddTransactionScreen extends StatefulWidget {
   const AddTransactionScreen({super.key});
@@ -55,12 +58,22 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Single
     if (_incomeAmountController.text.isEmpty) return;
     final amount = double.tryParse(_incomeAmountController.text);
     if (amount == null) return;
-    final income = Income(
+    final income = Income.create(
       amount: amount,
       description: _incomeDescController.text,
       date: _incomeDate,
     );
-    await HiveService().addIncome(income);
+    await IsarService().addIncome(income);
+    final accounts = await IsarService().getAccounts();
+    if (accounts.isNotEmpty) {
+      await IsarService().addAccountTransaction(AccountTransaction.create(
+        accountId: accounts.first.id,
+        amount: amount,
+        description: _incomeDescController.text,
+        date: _incomeDate,
+        type: 'deposit',
+      ));
+    }
     Navigator.of(context).pop();
   }
 
@@ -68,13 +81,23 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Single
     if (_expenseAmountController.text.isEmpty) return;
     final amount = double.tryParse(_expenseAmountController.text);
     if (amount == null) return;
-    final expense = ExpenseHive(
+    final expense = ExpenseHive.create(
       category: _expenseCategory,
       amount: amount,
       description: _expenseDescController.text,
       date: _expenseDate,
     );
-    await HiveService().addExpense(expense);
+    await IsarService().addExpense(expense);
+    final accounts = await IsarService().getAccounts();
+    if (accounts.isNotEmpty) {
+      await IsarService().addAccountTransaction(AccountTransaction.create(
+        accountId: accounts.first.id,
+        amount: amount,
+        description: _expenseDescController.text,
+        date: _expenseDate,
+        type: 'withdrawal',
+      ));
+    }
     Navigator.of(context).pop();
   }
 
@@ -82,11 +105,18 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Single
     if (_accountNameController.text.isEmpty || _accountBalanceController.text.isEmpty) return;
     final balance = double.tryParse(_accountBalanceController.text);
     if (balance == null) return;
-    final account = Account(
+    final account = Account.create(
       name: _accountNameController.text,
       balance: balance,
     );
-    await HiveService().addAccount(account);
+    await IsarService().addAccount(account);
+    await IsarService().addAccountTransaction(AccountTransaction.create(
+      accountId: account.id,
+      amount: balance,
+      description: 'Начальный баланс',
+      date: DateTime.now(),
+      type: 'deposit',
+    ));
     Navigator.of(context).pop();
   }
 
@@ -136,7 +166,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Single
                 const SizedBox(height: 16),
                 ListTile(
                   title: const Text('Date'),
-                  subtitle: Text(DateFormat('MMM d, y').format(_incomeDate)),
+                  subtitle: Text(dateFormat.format(_incomeDate)),
                   trailing: const Icon(Icons.calendar_today),
                   onTap: () async {
                     final date = await showDatePicker(
@@ -193,7 +223,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Single
                 const SizedBox(height: 16),
                 ListTile(
                   title: const Text('Date'),
-                  subtitle: Text(DateFormat('MMM d, y').format(_expenseDate)),
+                  subtitle: Text(dateFormat.format(_expenseDate)),
                   trailing: const Icon(Icons.calendar_today),
                   onTap: () async {
                     final date = await showDatePicker(

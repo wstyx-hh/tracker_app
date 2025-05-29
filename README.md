@@ -1,39 +1,32 @@
 # Expense Tracker
 
-**Expense Tracker** — это полнофункциональное приложение для управления личными финансами, написанное на Flutter.  
-Оно позволяет отслеживать доходы, расходы, планировать платежи, анализировать статистику и управлять счетами.
+**Expense Tracker** — это полнофункциональное приложение для управления личными финансами на Flutter.
 
-## Основные возможности
+## Особенности
 
-- Ведение доходов и расходов с подробным описанием и датой
+- Учёт доходов, расходов, счетов
 - Категоризация расходов
-- Управление счетами
-- Планирование будущих платежей
-- Просмотр статистики и графиков (fl_chart)
-- Тёмная и светлая тема (ThemeProvider)
-- Локальное хранение данных с помощью Hive
-- Удобный и современный интерфейс
+- Планирование платежей
+- Статистика и графики (fl_chart)
+- Тёмная/светлая тема
+- Локальное хранение данных с помощью [Isar](https://isar.dev/)
+- Экспорт/импорт данных (JSON)
+- Очистка всех данных одним кликом
+- Современный интерфейс
 
 ## Структура проекта
 
-- `lib/main.dart` — точка входа, инициализация Hive и запуск приложения
-- `lib/models/` — модели данных (доходы, расходы, счета, плановые платежи)
-- `lib/services/` — сервисы для работы с Hive
-- `lib/providers/` — провайдеры состояния (расходы, тема)
-- `lib/screens/` — основные экраны приложения:
-  - `home_screen.dart` — главный экран
-  - `transactions_screen.dart` — список операций
-  - `statistics_screen.dart` — статистика и графики
-  - `budget_screen.dart` — бюджет
-  - `settings_screen.dart` — настройки
-  - `add_transaction_screen.dart` — добавление дохода/расхода/счёта
-  - `planned_payments_screen.dart`, `add_planned_payment_screen.dart` — плановые платежи
+- `lib/main.dart` — точка входа, запуск приложения
+- `lib/models/` — модели данных (Isar коллекции)
+- `lib/services/isar_service.dart` — сервис для работы с Isar
+- `lib/screens/` — основные экраны (транзакции, статистика, бюджет, настройки и др.)
+- `lib/providers/` — провайдеры состояния
 
 ## Быстрый старт
 
 1. **Клонируйте репозиторий:**
    ```sh
-   git clone <repo_url>
+   git clone https://github.com/wstyx-hh/tracker_app.git
    cd expense_tracker
    ```
 
@@ -42,17 +35,26 @@
    flutter pub get
    ```
 
-3. **Запустите приложение:**
+3. **Сгенерируйте адаптеры Isar:**
+   ```sh
+   flutter pub run build_runner build --delete-conflicting-outputs
+   ```
+
+4. **Запустите приложение:**
    ```sh
    flutter run -d windows   # или -d chrome, -d android, -d ios
    ```
 
-> ⚠️ В текущей версии для целей тестирования при запуске происходит автоматическая очистка всех данных Hive (см. main.dart). Удалите этот блок кода для сохранения данных между сессиями.
+## Экспорт/Импорт/Очистка данных
+
+- **Экспорт:** В настройках выберите "Export Data" — ваши данные будут сохранены в JSON-файл.
+- **Импорт:** В настройках выберите "Import Data" и выберите ранее сохранённый JSON-файл.
+- **Очистка:** Кнопка "Clear All Data" удаляет все ваши данные из приложения.
 
 ## Зависимости
 
 - [Flutter](https://flutter.dev/)
-- [Hive](https://pub.dev/packages/hive), [hive_flutter](https://pub.dev/packages/hive_flutter)
+- [Isar](https://isar.dev/)
 - [Provider](https://pub.dev/packages/provider)
 - [fl_chart](https://pub.dev/packages/fl_chart)
 - [google_fonts](https://pub.dev/packages/google_fonts)

@@ -1,12 +1,17 @@
-import 'package:hive/hive.dart';
+import 'package:isar/isar.dart';
 part 'account.g.dart';
 
-@HiveType(typeId: 0)
-class Account extends HiveObject {
-  @HiveField(0)
-  String name;
-  @HiveField(1)
-  double balance;
+@Collection()
+class Account {
+  Id id = Isar.autoIncrement;
+  late String name;
+  late double balance;
 
-  Account({required this.name, required this.balance});
+  Account();
+  Account.create({required this.name, required this.balance, this.id = Isar.autoIncrement});
+
+  Map<String, dynamic> toJson() => {
+    'name': name,
+    'balance': balance,
+  };
 } 

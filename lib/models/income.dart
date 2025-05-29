@@ -1,14 +1,19 @@
-import 'package:hive/hive.dart';
+import 'package:isar/isar.dart';
 part 'income.g.dart';
 
-@HiveType(typeId: 1)
-class Income extends HiveObject {
-  @HiveField(0)
-  double amount;
-  @HiveField(1)
-  String description;
-  @HiveField(2)
-  DateTime date;
+@Collection()
+class Income {
+  Id id = Isar.autoIncrement;
+  late double amount;
+  late String description;
+  late DateTime date;
 
-  Income({required this.amount, required this.description, required this.date});
+  Income();
+  Income.create({required this.amount, required this.description, required this.date});
+
+  Map<String, dynamic> toJson() => {
+    'amount': amount,
+    'description': description,
+    'date': date.toIso8601String(),
+  };
 } 
