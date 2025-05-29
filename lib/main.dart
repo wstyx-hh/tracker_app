@@ -24,22 +24,9 @@ class MyApp extends StatelessWidget {
         builder: (context, themeProvider, _) {
           return MaterialApp(
             title: 'Expense Tracker',
-            theme: ThemeData(
-              colorScheme: ColorScheme.fromSeed(
-                seedColor: Colors.blue,
-                brightness: Brightness.light,
-              ),
-              textTheme: GoogleFonts.poppinsTextTheme(),
-              useMaterial3: true,
-            ),
-            darkTheme: ThemeData(
-              colorScheme: ColorScheme.fromSeed(
-                seedColor: Colors.blue,
-                brightness: Brightness.dark,
-              ),
-              textTheme: GoogleFonts.poppinsTextTheme(ThemeData.dark().textTheme),
-              useMaterial3: true,
-            ),
+            debugShowCheckedModeBanner: false,
+            theme: themeProvider.lightTheme,
+            darkTheme: themeProvider.darkTheme,
             themeMode: themeProvider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
             home: const HomeScreen(),
           );
