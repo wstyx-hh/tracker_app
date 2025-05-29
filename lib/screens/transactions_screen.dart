@@ -58,75 +58,167 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
           title: const Text('Transactions'),
           bottom: const TabBar(
             tabs: [
+              Tab(text: 'All'),
               Tab(text: 'Incomes'),
               Tab(text: 'Expenses'),
-              Tab(text: 'Accounts'),
             ],
           ),
         ),
         body: TabBarView(
           children: [
-            // Incomes Tab (как было)
+            _buildAllTab(),
             _buildIncomesTab(),
-            // Expenses Tab (как было)
             _buildExpensesTab(),
-            // Accounts Tab (новая история)
-            FutureBuilder<List<AccountTransaction>>(
-              future: IsarService().getAccountTransactions(),
-              builder: (context, snapshot) {
-                if (!snapshot.hasData) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                final txs = snapshot.data!;
-                if (txs.isEmpty) {
-                  return const Center(child: Text('No account history yet.'));
-                }
-                return ListView.separated(
-                  itemCount: txs.length,
-                  separatorBuilder: (_, __) => const Divider(height: 1),
-                  itemBuilder: (context, i) {
-                    final tx = txs[i];
-                    return ListTile(
-                      leading: Icon(
-                        tx.type == 'deposit'
-                            ? Icons.arrow_downward
-                            : tx.type == 'withdrawal'
-                                ? Icons.arrow_upward
-                                : Icons.swap_horiz,
-                        color: tx.type == 'deposit'
-                            ? Colors.green
-                            : tx.type == 'withdrawal'
-                                ? Colors.red
-                                : Colors.blue,
-                      ),
-                      title: Text(
-                        (tx.type == 'deposit'
-                            ? 'Пополнение'
-                            : tx.type == 'withdrawal'
-                                ? 'Снятие'
-                                : 'Перевод') +
-                        ' на счет ID ${tx.accountId}',
-                      ),
-                      subtitle: Text('${dateFormat.format(tx.date)} — ${tx.description}'),
-                      trailing: Text(
-                        (tx.type == 'deposit' ? '+' : '-') + tx.amount.toStringAsFixed(2),
-                        style: TextStyle(
-                          color: tx.type == 'deposit'
-                              ? Colors.green
-                              : tx.type == 'withdrawal'
-                                  ? Colors.red
-                                  : Colors.blue,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    );
-                  },
-                );
-              },
-            ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildAllTab() {
+    return FutureBuilder(
+      future: Future.wait([
+        IsarService().getIncomes(),
+        IsarService().getExpenses(),
+      ]),
+      builder: (context, AsyncSnapshot<List<dynamic>> snapshot) {
+        if (!snapshot.hasData) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        final allIncomes = snapshot.data![0] as List<Income>;
+        final allExpenses = snapshot.data![1] as List<ExpenseHive>;
+        final incomes = _filterIncomesByDateRange(allIncomes);
+        final expenses = _filterExpensesByDateRange(allExpenses);
+        final allTx = [
+          ...incomes.map((i) => {'type': 'income', 'date': i.date, 'amount': i.amount, 'desc': i.description}),
+          ...expenses.map((e) => {'type': 'expense', 'date': e.date, 'amount': e.amount, 'desc': e.description, 'cat': e.category}),
+        ]..sort((a, b) {
+          final ad = a['date'] as DateTime?;
+          final bd = b['date'] as DateTime?;
+          if (ad == null || bd == null) return 0;
+          return bd.compareTo(ad);
+        });
+        final totalIncome = incomes.fold<double>(0, (sum, i) => sum + i.amount);
+        final totalExpenses = expenses.fold<double>(0, (sum, e) => sum + e.amount);
+        final total = totalIncome - totalExpenses;
+        return Stack(
+          children: [
+            Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        '${dateFormat.format(_startDate)} - ${dateFormat.format(_endDate)}',
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: ListView(
+                    children: allTx.map((tx) => ListTile(
+                      leading: Icon(
+                        tx['type'] == 'income' ? Icons.add : Icons.remove,
+                        color: tx['type'] == 'income' ? Colors.green : Colors.red,
+                      ),
+                      title: Text(tx['type'] == 'income' ? 'Salary' : (tx['cat'] as String? ?? '')),
+                      subtitle: Text('${dateFormat.format(tx['date'] as DateTime)} — ${(tx['desc'] as String?) ?? ''}'),
+                      trailing: Text(
+                        (tx['type'] == 'income' ? '+' : '-') + ((tx['amount'] as num?)?.toStringAsFixed(2) ?? '0.00'),
+                        style: TextStyle(
+                          color: tx['type'] == 'income' ? Colors.green : Colors.red,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    )).toList(),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Total Income:', style: TextStyle(fontWeight: FontWeight.bold)),
+                          Text('+${totalIncome.toStringAsFixed(2)}', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Total Expenses:', style: TextStyle(fontWeight: FontWeight.bold)),
+                          Text('-${totalExpenses.toStringAsFixed(2)}', style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Stack(
+                        children: [
+                          Container(
+                            height: 10,
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.08),
+                              borderRadius: BorderRadius.circular(5),
+                            ),
+                          ),
+                          FractionallySizedBox(
+                            widthFactor: totalIncome == 0 ? 0 : (total / totalIncome).clamp(0, 1),
+                            child: Container(
+                              height: 10,
+                              decoration: BoxDecoration(
+                                color: total >= 0 ? Colors.green.withOpacity(0.5) : Colors.red.withOpacity(0.5),
+                                borderRadius: BorderRadius.circular(5),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Total Balance:', style: TextStyle(fontWeight: FontWeight.bold)),
+                          Text(
+                            (total >= 0 ? '+' : '-') + total.abs().toStringAsFixed(2),
+                            style: TextStyle(
+                              color: total >= 0 ? Colors.green : Colors.red,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 60),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            Positioned(
+              top: 16,
+              right: 16,
+              child: SizedBox(
+                width: 40,
+                height: 40,
+                child: FloatingActionButton(
+                  onPressed: () async {
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const AddTransactionScreen()),
+                    );
+                    setState(() {});
+                  },
+                  child: const Icon(Icons.add, size: 20),
+                  mini: true,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -134,23 +226,36 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     return FutureBuilder(
       future: Future.wait([
         IsarService().getIncomes(),
-        IsarService().getAccounts(),
       ]),
       builder: (context, AsyncSnapshot<List<dynamic>> snapshot) {
         if (!snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
         }
         final allIncomes = snapshot.data![0] as List<Income>;
-        final accounts = snapshot.data![1] as List<Account>;
         final incomes = _filterIncomesByDateRange(allIncomes);
-
+        final totalIncome = incomes.fold<double>(0, (sum, i) => sum + i.amount);
         return Scaffold(
           appBar: AppBar(
-            title: const Text('Operations'),
+            title: const Text('Incomes'),
             actions: [
               IconButton(
                 icon: const Icon(Icons.date_range),
                 onPressed: _selectDateRange,
+              ),
+              SizedBox(
+                width: 40,
+                height: 40,
+                child: FloatingActionButton(
+                  onPressed: () async {
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const AddTransactionScreen()),
+                    );
+                    setState(() {});
+                  },
+                  child: const Icon(Icons.add, size: 20),
+                  mini: true,
+                ),
               ),
             ],
           ),
@@ -165,10 +270,12 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                       '${dateFormat.format(_startDate)} - ${dateFormat.format(_endDate)}',
                       style: Theme.of(context).textTheme.titleLarge,
                     ),
-                    TextButton.icon(
-                      onPressed: _selectDateRange,
-                      icon: const Icon(Icons.date_range),
-                      label: const Text('Change Date Range'),
+                    Text(
+                      '+${totalIncome.toStringAsFixed(2)}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.green,
+                      ),
                     ),
                   ],
                 ),
@@ -185,7 +292,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                             leading: const Icon(Icons.add, color: Colors.green),
                             title: Text('Salary'),
                             subtitle: Text(i.description),
-                            trailing: Text('+\$${i.amount.toStringAsFixed(2)}'),
+                            trailing: Text('+${i.amount.toStringAsFixed(2)}'),
                             dense: true,
                             visualDensity: VisualDensity.compact,
                             subtitleTextStyle: const TextStyle(fontSize: 13),
@@ -195,54 +302,17 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                             },
                           )),
                     ],
-                    if (accounts.isNotEmpty) ...[
-                      const Padding(
-                        padding: EdgeInsets.all(8),
-                        child: Text('Accounts', style: TextStyle(fontWeight: FontWeight.bold)),
-                      ),
-                      ...accounts.map((a) => ListTile(
-                            leading: const Icon(Icons.account_balance_wallet, color: Colors.blue),
-                            title: Text(a.name),
-                            trailing: Text('+\$${a.balance.toStringAsFixed(2)}'),
-                            dense: true,
-                            visualDensity: VisualDensity.compact,
-                          )),
-                      const Divider(),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text('Total:', style: TextStyle(fontWeight: FontWeight.bold)),
-                            Text(
-                              '+\$${accounts.fold<double>(0, (sum, a) => sum + a.balance).toStringAsFixed(2)}',
-                              style: const TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                    if (incomes.isEmpty && accounts.isEmpty)
+                    if (incomes.isEmpty)
                       const Center(
                         child: Padding(
                           padding: EdgeInsets.all(32),
-                          child: Text('No operations for selected date range'),
+                          child: Text('No incomes for selected date range'),
                         ),
                       ),
                   ],
                 ),
               ),
             ],
-          ),
-          floatingActionButton: FloatingActionButton(
-            onPressed: () async {
-              await Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const AddTransactionScreen()),
-              );
-              setState(() {});
-            },
-            child: const Icon(Icons.add),
           ),
         );
       },
@@ -253,23 +323,40 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
     return FutureBuilder(
       future: Future.wait([
         IsarService().getExpenses(),
-        IsarService().getAccounts(),
+        IsarService().getIncomes(),
       ]),
       builder: (context, AsyncSnapshot<List<dynamic>> snapshot) {
         if (!snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
         }
         final allExpenses = snapshot.data![0] as List<ExpenseHive>;
-        final accounts = snapshot.data![1] as List<Account>;
+        final allIncomes = snapshot.data![1] as List<Income>;
         final expenses = _filterExpensesByDateRange(allExpenses);
-
+        final totalIncomes = _filterIncomesByDateRange(allIncomes).fold<double>(0, (sum, i) => sum + i.amount);
+        final totalExpenses = expenses.fold<double>(0, (sum, e) => sum + e.amount);
+        final left = totalIncomes - totalExpenses;
         return Scaffold(
           appBar: AppBar(
-            title: const Text('Operations'),
+            title: const Text('Expenses'),
             actions: [
               IconButton(
                 icon: const Icon(Icons.date_range),
                 onPressed: _selectDateRange,
+              ),
+              SizedBox(
+                width: 40,
+                height: 40,
+                child: FloatingActionButton(
+                  onPressed: () async {
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const AddTransactionScreen()),
+                    );
+                    setState(() {});
+                  },
+                  child: const Icon(Icons.add, size: 20),
+                  mini: true,
+                ),
               ),
             ],
           ),
@@ -284,10 +371,12 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                       '${dateFormat.format(_startDate)} - ${dateFormat.format(_endDate)}',
                       style: Theme.of(context).textTheme.titleLarge,
                     ),
-                    TextButton.icon(
-                      onPressed: _selectDateRange,
-                      icon: const Icon(Icons.date_range),
-                      label: const Text('Change Date Range'),
+                    Text(
+                      '-${totalExpenses.toStringAsFixed(2)}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.red,
+                      ),
                     ),
                   ],
                 ),
@@ -304,7 +393,7 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                             leading: const Icon(Icons.remove, color: Colors.red),
                             title: Text(e.category),
                             subtitle: Text(e.description),
-                            trailing: Text('-\$${e.amount.toStringAsFixed(2)}'),
+                            trailing: Text('-${e.amount.toStringAsFixed(2)}'),
                             dense: true,
                             visualDensity: VisualDensity.compact,
                             subtitleTextStyle: const TextStyle(fontSize: 13),
@@ -314,54 +403,33 @@ class _TransactionsScreenState extends State<TransactionsScreen> {
                             },
                           )),
                     ],
-                    if (accounts.isNotEmpty) ...[
-                      const Padding(
-                        padding: EdgeInsets.all(8),
-                        child: Text('Accounts', style: TextStyle(fontWeight: FontWeight.bold)),
-                      ),
-                      ...accounts.map((a) => ListTile(
-                            leading: const Icon(Icons.account_balance_wallet, color: Colors.blue),
-                            title: Text(a.name),
-                            trailing: Text('+\$${a.balance.toStringAsFixed(2)}'),
-                            dense: true,
-                            visualDensity: VisualDensity.compact,
-                          )),
-                      const Divider(),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            const Text('Total:', style: TextStyle(fontWeight: FontWeight.bold)),
-                            Text(
-                              '-\$${accounts.fold<double>(0, (sum, a) => sum + a.balance).toStringAsFixed(2)}',
-                              style: const TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                    if (expenses.isEmpty && accounts.isEmpty)
+                    if (expenses.isEmpty)
                       const Center(
                         child: Padding(
                           padding: EdgeInsets.all(32),
-                          child: Text('No operations for selected date range'),
+                          child: Text('No expenses for selected date range'),
                         ),
                       ),
                   ],
                 ),
               ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('Left from incomes:', style: TextStyle(fontWeight: FontWeight.bold)),
+                    Text(
+                      (left >= 0 ? '+' : '-') + left.abs().toStringAsFixed(2),
+                      style: TextStyle(
+                        color: left >= 0 ? Colors.green : Colors.red,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ],
-          ),
-          floatingActionButton: FloatingActionButton(
-            onPressed: () async {
-              await Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const AddTransactionScreen()),
-              );
-              setState(() {});
-            },
-            child: const Icon(Icons.add),
           ),
         );
       },

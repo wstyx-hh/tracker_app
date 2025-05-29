@@ -238,32 +238,57 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                   }),
                 ],
                 const SizedBox(height: 24),
-                if (expenses.isNotEmpty) ...[
-                  Text(
-                    'Daily Expenses',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 16),
+                Text('Daily Expenses', style: Theme.of(context).textTheme.titleMedium),
+                if (dailyExpenses.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.all(32),
+                    child: Text('No daily expenses for selected period', style: TextStyle(color: Colors.grey)),
+                  )
+                else
                   SizedBox(
                     height: 200,
-                    child: LineChart(
-                      LineChartData(
-                        gridData: const FlGridData(show: false),
-                        titlesData: const FlTitlesData(show: false),
-                        borderData: FlBorderData(show: false),
-                        lineBarsData: [
-                          LineChartBarData(
-                            spots: dailyExpenses,
-                            isCurved: true,
-                            color: Theme.of(context).colorScheme.primary,
-                            barWidth: 3,
-                            dotData: const FlDotData(show: false),
+                    child: BarChart(
+                      BarChartData(
+                        alignment: BarChartAlignment.spaceBetween,
+                        barTouchData: BarTouchData(enabled: true),
+                        titlesData: FlTitlesData(
+                          leftTitles: AxisTitles(
+                            sideTitles: SideTitles(showTitles: true, reservedSize: 40),
                           ),
+                          bottomTitles: AxisTitles(
+                            sideTitles: SideTitles(
+                              showTitles: true,
+                              getTitlesWidget: (value, meta) {
+                                final day = value.toInt();
+                                return Padding(
+                                  padding: const EdgeInsets.only(top: 8),
+                                  child: Text(day.toString(), style: const TextStyle(fontSize: 10)),
+                                );
+                              },
+                            ),
+                          ),
+                          rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                          topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                        ),
+                        borderData: FlBorderData(show: false),
+                        gridData: FlGridData(show: false),
+                        barGroups: [
+                          for (final spot in dailyExpenses)
+                            BarChartGroupData(
+                              x: spot.x.toInt(),
+                              barRods: [
+                                BarChartRodData(
+                                  toY: spot.y,
+                                  color: Theme.of(context).colorScheme.primary,
+                                  width: 12,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                              ],
+                            ),
                         ],
                       ),
                     ),
                   ),
-                ],
                 if (expenses.isEmpty && incomes.isEmpty)
                   const Center(
                     child: Padding(

@@ -21,7 +21,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Single
   // Income
   final _incomeAmountController = TextEditingController();
   final _incomeDescController = TextEditingController();
+  String _incomeSource = 'Card';
   DateTime _incomeDate = DateTime.now();
+  final List<String> _incomeSources = ['Card', 'Cash'];
 
   // Expense
   final _expenseAmountController = TextEditingController();
@@ -32,14 +34,10 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Single
     'Entertainment', 'Health', 'Shopping', 'Bills', 'Transportation', 'Food', 'Education', 'Other',
   ];
 
-  // Account
-  final _accountNameController = TextEditingController();
-  final _accountBalanceController = TextEditingController();
-
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 2, vsync: this);
   }
 
   @override
@@ -49,75 +47,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Single
     _incomeDescController.dispose();
     _expenseAmountController.dispose();
     _expenseDescController.dispose();
-    _accountNameController.dispose();
-    _accountBalanceController.dispose();
     super.dispose();
-  }
-
-  void _addIncome() async {
-    if (_incomeAmountController.text.isEmpty) return;
-    final amount = double.tryParse(_incomeAmountController.text);
-    if (amount == null) return;
-    final income = Income.create(
-      amount: amount,
-      description: _incomeDescController.text,
-      date: _incomeDate,
-    );
-    await IsarService().addIncome(income);
-    final accounts = await IsarService().getAccounts();
-    if (accounts.isNotEmpty) {
-      await IsarService().addAccountTransaction(AccountTransaction.create(
-        accountId: accounts.first.id,
-        amount: amount,
-        description: _incomeDescController.text,
-        date: _incomeDate,
-        type: 'deposit',
-      ));
-    }
-    Navigator.of(context).pop();
-  }
-
-  void _addExpense() async {
-    if (_expenseAmountController.text.isEmpty) return;
-    final amount = double.tryParse(_expenseAmountController.text);
-    if (amount == null) return;
-    final expense = ExpenseHive.create(
-      category: _expenseCategory,
-      amount: amount,
-      description: _expenseDescController.text,
-      date: _expenseDate,
-    );
-    await IsarService().addExpense(expense);
-    final accounts = await IsarService().getAccounts();
-    if (accounts.isNotEmpty) {
-      await IsarService().addAccountTransaction(AccountTransaction.create(
-        accountId: accounts.first.id,
-        amount: amount,
-        description: _expenseDescController.text,
-        date: _expenseDate,
-        type: 'withdrawal',
-      ));
-    }
-    Navigator.of(context).pop();
-  }
-
-  void _addAccount() async {
-    if (_accountNameController.text.isEmpty || _accountBalanceController.text.isEmpty) return;
-    final balance = double.tryParse(_accountBalanceController.text);
-    if (balance == null) return;
-    final account = Account.create(
-      name: _accountNameController.text,
-      balance: balance,
-    );
-    await IsarService().addAccount(account);
-    await IsarService().addAccountTransaction(AccountTransaction.create(
-      accountId: account.id,
-      amount: balance,
-      description: 'Начальный баланс',
-      date: DateTime.now(),
-      type: 'deposit',
-    ));
-    Navigator.of(context).pop();
   }
 
   @override
@@ -130,7 +60,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Single
           tabs: const [
             Tab(text: 'Income'),
             Tab(text: 'Expense'),
-            Tab(text: 'Account'),
           ],
         ),
       ),
@@ -144,6 +73,16 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Single
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const Text('Only Salary can be added as income.'),
+                const SizedBox(height: 16),
+                DropdownButtonFormField<String>(
+                  value: _incomeSource,
+                  decoration: const InputDecoration(
+                    labelText: 'Source',
+                    border: OutlineInputBorder(),
+                  ),
+                  items: _incomeSources.map((src) => DropdownMenuItem(value: src, child: Text(src))).toList(),
+                  onChanged: (val) => setState(() => _incomeSource = val!),
+                ),
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _incomeAmountController,
@@ -243,39 +182,49 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Single
               ],
             ),
           ),
-          // ACCOUNT
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                TextFormField(
-                  controller: _accountNameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Account Name',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _accountBalanceController,
-                  decoration: const InputDecoration(
-                    labelText: 'Initial Balance',
-                    border: OutlineInputBorder(),
-                    prefixText: '\$',
-                  ),
-                  keyboardType: TextInputType.number,
-                ),
-                const SizedBox(height: 24),
-                ElevatedButton(
-                  onPressed: _addAccount,
-                  child: const Text('Add Account'),
-                ),
-              ],
-            ),
-          ),
         ],
       ),
     );
+  }
+
+  void _addIncome() async {
+    if (_incomeAmountController.text.isEmpty) return;
+    final amount = double.tryParse(_incomeAmountController.text);
+    if (amount == null) return;
+    final income = Income.create(
+      amount: amount,
+      description: '${_incomeSource}: ${_incomeDescController.text}',
+      date: _incomeDate,
+    );
+    await IsarService().addIncome(income);
+    await IsarService().addAccountTransaction(AccountTransaction.create(
+      accountId: 0,
+      amount: amount,
+      description: '${_incomeSource}: ${_incomeDescController.text}',
+      date: _incomeDate,
+      type: 'deposit',
+    ));
+    Navigator.of(context).pop();
+  }
+
+  void _addExpense() async {
+    if (_expenseAmountController.text.isEmpty) return;
+    final amount = double.tryParse(_expenseAmountController.text);
+    if (amount == null) return;
+    final expense = ExpenseHive.create(
+      category: _expenseCategory,
+      amount: amount,
+      description: _expenseDescController.text,
+      date: _expenseDate,
+    );
+    await IsarService().addExpense(expense);
+    await IsarService().addAccountTransaction(AccountTransaction.create(
+      accountId: 0,
+      amount: amount,
+      description: _expenseDescController.text,
+      date: _expenseDate,
+      type: 'withdrawal',
+    ));
+    Navigator.of(context).pop();
   }
 }

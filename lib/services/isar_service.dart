@@ -4,6 +4,7 @@ import '../models/income.dart';
 import '../models/expense_hive.dart';
 import '../models/account.dart';
 import '../models/account_transaction.dart';
+import '../models/budget.dart';
 import 'dart:convert';
 import 'dart:io';
 
@@ -22,6 +23,7 @@ class IsarService {
       ExpenseHiveSchema,
       AccountSchema,
       AccountTransactionSchema,
+      BudgetSchema,
     ], directory: dir.path);
     return _isar!;
   }
@@ -80,6 +82,7 @@ class IsarService {
       await db.incomes.clear();
       await db.expenseHives.clear();
       await db.accounts.clear();
+      await db.budgets.clear();
     });
   }
 
@@ -131,5 +134,77 @@ class IsarService {
     } else {
       return db.accountTransactions.where().sortByDateDesc().findAll();
     }
+  }
+
+  Future<void> deleteAccountTransaction(int id) async {
+    final db = await isar;
+    await db.writeTxn(() => db.accountTransactions.delete(id));
+  }
+
+  // Имя общего счета (singleton Account с id=0)
+  Future<void> setAccountName(String name) async {
+    final db = await isar;
+    final acc = await db.accounts.get(0);
+    if (acc == null) {
+      await db.writeTxn(() => db.accounts.put(Account()
+        ..id = 0
+        ..name = name
+        ..balance = 0));
+    } else {
+      acc.name = name;
+      await db.writeTxn(() => db.accounts.put(acc));
+    }
+  }
+
+  Future<String> getAccountName() async {
+    final db = await isar;
+    final acc = await db.accounts.get(0);
+    return acc?.name ?? 'Account';
+  }
+
+  // BUDGETS
+  Future<void> addBudget(Budget budget) async {
+    final db = await isar;
+    if (budget.category == 'all') {
+      // Удаляем все предыдущие тотал-лимиты за этот месяц/год
+      final existing = await db.budgets.filter().categoryEqualTo('all').yearEqualTo(budget.year).monthEqualTo(budget.month).findAll();
+      await db.writeTxn(() async {
+        for (final b in existing) {
+          await db.budgets.delete(b.id);
+        }
+        await db.budgets.put(budget);
+      });
+    } else {
+      await db.writeTxn(() => db.budgets.put(budget));
+    }
+  }
+
+  Future<List<Budget>> getBudgets({int? year, int? month}) async {
+    final db = await isar;
+    if (year != null && month != null) {
+      return db.budgets.filter().yearEqualTo(year).monthEqualTo(month).findAll();
+    } else {
+      return db.budgets.where().findAll();
+    }
+  }
+
+  Future<Budget?> getBudgetForCategory(String category, int year, int month) async {
+    final db = await isar;
+    return db.budgets.filter().categoryEqualTo(category).yearEqualTo(year).monthEqualTo(month).findFirst();
+  }
+
+  Future<Budget?> getBudgetForMonth(int year, int month) async {
+    final db = await isar;
+    return db.budgets.filter().categoryEqualTo('all').yearEqualTo(year).monthEqualTo(month).findFirst();
+  }
+
+  Future<void> deleteBudget(int id) async {
+    final db = await isar;
+    await db.writeTxn(() => db.budgets.delete(id));
+  }
+
+  Future<void> updateBudget(Budget budget) async {
+    final db = await isar;
+    await db.writeTxn(() => db.budgets.put(budget));
   }
 } 

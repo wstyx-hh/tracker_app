@@ -1,7 +1,11 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:path_provider/path_provider.dart';
 import '../providers/theme_provider.dart';
+import '../services/isar_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -13,11 +17,14 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   String _currency = '\$';
   bool _notificationsEnabled = true;
+  final _nameController = TextEditingController();
+  bool _loading = true;
 
   @override
   void initState() {
     super.initState();
     _loadSettings();
+    _loadName();
   }
 
   Future<void> _loadSettings() async {
@@ -34,9 +41,50 @@ class _SettingsScreenState extends State<SettingsScreen> {
     await prefs.setBool('notificationsEnabled', _notificationsEnabled);
   }
 
+  Future<void> _loadName() async {
+    final name = await IsarService().getAccountName();
+    _nameController.text = name;
+    setState(() => _loading = false);
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    super.dispose();
+  }
+
+  void _save() async {
+    await IsarService().setAccountName(_nameController.text.trim());
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Account name updated')));
+  }
+
+  Future<void> _exportData() async {
+    final json = await IsarService().exportData();
+    final dir = await getApplicationDocumentsDirectory();
+    final file = File('${dir.path}/expense_export.json');
+    await file.writeAsString(json);
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Data exported to ${file.path}')));
+  }
+
+  Future<void> _importData() async {
+    final result = await FilePicker.platform.pickFiles(type: FileType.custom, allowedExtensions: ['json']);
+    if (result != null && result.files.single.path != null) {
+      final file = File(result.files.single.path!);
+      final json = await file.readAsString();
+      await IsarService().importData(json);
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Data imported successfully')));
+    }
+  }
+
+  Future<void> _clearAllData() async {
+    await IsarService().clearAllData();
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('All data cleared')));
+  }
+
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
+    if (_loading) return const Center(child: CircularProgressIndicator());
     return Scaffold(
       appBar: AppBar(
         title: const Text('Settings'),
@@ -101,17 +149,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 title: const Text('Export Data'),
                 subtitle: const Text('Export your expense data'),
                 leading: const Icon(Icons.download),
-                onTap: () {
-                  // TODO: Implement data export
-                },
+                onTap: _exportData,
               ),
               ListTile(
                 title: const Text('Import Data'),
                 subtitle: const Text('Import expense data from file'),
                 leading: const Icon(Icons.upload),
-                onTap: () {
-                  // TODO: Implement data import
-                },
+                onTap: _importData,
               ),
               ListTile(
                 title: const Text('Clear All Data'),
@@ -133,9 +177,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           child: const Text('Cancel'),
                         ),
                         TextButton(
-                          onPressed: () {
-                            // TODO: Implement data clearing
+                          onPressed: () async {
                             Navigator.pop(context);
+                            await _clearAllData();
                           },
                           child: Text(
                             'Delete',
@@ -169,6 +213,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 onTap: () {
                   // TODO: Show terms of service
                 },
+              ),
+            ],
+          ),
+          _buildSection(
+            title: 'Account Name',
+            children: [
+              const SizedBox(height: 8),
+              TextField(
+                controller: _nameController,
+                decoration: const InputDecoration(border: OutlineInputBorder()),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: _save,
+                child: const Text('Save'),
               ),
             ],
           ),
