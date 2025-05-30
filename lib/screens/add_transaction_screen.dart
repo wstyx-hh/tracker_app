@@ -19,7 +19,8 @@ class AddTransactionScreen extends StatefulWidget {
 
 class _AddTransactionScreenState extends State<AddTransactionScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
-  final _formKey = GlobalKey<FormState>();
+  final _expenseFormKey = GlobalKey<FormState>();
+  final _incomeFormKey = GlobalKey<FormState>();
 
   // Income
   final _incomeAmountController = TextEditingController();
@@ -48,6 +49,11 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Single
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(() {
+      if (_tabController.indexIsChanging) {
+        setState(() {});
+      }
+    });
   }
 
   @override
@@ -69,7 +75,18 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Single
         bottom: TabBar(
           controller: _tabController,
           onTap: (index) {
-            setState(() {});
+            setState(() {
+              // Clear forms when switching tabs
+              if (index == 0) {
+                _expenseAmountController.clear();
+                _expenseDescController.clear();
+                _expenseDate = DateTime.now();
+              } else {
+                _incomeAmountController.clear();
+                _incomeDescController.clear();
+                _incomeDate = DateTime.now();
+              }
+            });
           },
           tabs: [
             Tab(text: l10n.expenses),
@@ -92,7 +109,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Single
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Form(
-        key: _formKey,
+        key: _expenseFormKey,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -164,7 +181,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Single
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Form(
-        key: _formKey,
+        key: _incomeFormKey,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -262,7 +279,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Single
   }
 
   void _saveExpense() async {
-    if (_formKey.currentState!.validate()) {
+    if (_expenseFormKey.currentState!.validate()) {
       final amount = double.parse(_expenseAmountController.text);
       final transaction = AccountTransaction()
         ..accountId = 1  // Default account ID
@@ -281,7 +298,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> with Single
   }
 
   void _saveIncome() async {
-    if (_formKey.currentState!.validate()) {
+    if (_incomeFormKey.currentState!.validate()) {
       final amount = double.parse(_incomeAmountController.text);
       final transaction = AccountTransaction()
         ..accountId = 1  // Default account ID
