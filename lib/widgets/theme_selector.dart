@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/theme_provider.dart';
+import '../l10n/app_localizations.dart';
 
 class ThemeSelector extends StatelessWidget {
   const ThemeSelector({super.key});
@@ -8,6 +9,8 @@ class ThemeSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final l10n = AppLocalizations.of(context);
     
     return Consumer<ThemeProvider>(
       builder: (context, themeProvider, _) {
@@ -90,16 +93,22 @@ class ThemeSelector extends StatelessWidget {
               ),
             ),
             const Divider(height: 32),
-            ListTile(
-              leading: Icon(
+            SwitchListTile(
+              secondary: Icon(
                 themeProvider.isDarkMode ? Icons.dark_mode : Icons.light_mode,
-                color: theme.colorScheme.primary,
+                color: Theme.of(context).colorScheme.primary,
               ),
-              title: const Text('Dark Mode'),
-              trailing: Switch(
-                value: themeProvider.isDarkMode,
-                onChanged: themeProvider.toggleTheme,
-              ),
+              title: Text(themeProvider.isDarkMode ? l10n.darkMode : l10n.lightMode),
+              value: themeProvider.isDarkMode,
+              onChanged: (bool value) {
+                themeProvider.setDarkMode(value);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(l10n.themeChanged),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              },
             ),
           ],
         );

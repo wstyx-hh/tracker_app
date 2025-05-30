@@ -149,6 +149,14 @@ class AppLocalizations {
     return _localizedValues[locale.languageCode]?['deepPurple'] ?? 'Deep Purple';
   }
 
+  String get lightMode {
+    return _localizedValues[locale.languageCode]?['lightMode'] ?? 'Light Mode';
+  }
+
+  String get themeChanged {
+    return _localizedValues[locale.languageCode]?['themeChanged'] ?? 'Theme changed';
+  }
+
   String get data {
     return _localizedValues[locale.languageCode]?['data'] ?? 'Data';
   }

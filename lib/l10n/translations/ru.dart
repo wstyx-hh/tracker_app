@@ -17,7 +17,6 @@ const Map<String, String> ru = {
   'addIncome': 'Добавить доход',
   'total': 'Итого',
   'balance': 'Баланс',
-  'darkMode': 'Темная тема',
   'currency': 'Валюта',
   'appTheme': 'Тема приложения',
   'preferences': 'Настройки',
@@ -114,8 +113,8 @@ const Map<String, String> ru = {
   'Currency changed': 'Валюта изменена',
   // Темы
   'Theme changed': 'Тема изменена',
-  'Light Mode': 'Светлая тема',
-  'Dark Mode': 'Темная тема',
-  'System Theme': 'Системная тема',
+  'lightMode': 'Светлая тема',
+  'darkMode': 'Темная тема',
+  'systemTheme': 'Системная тема',
   'addYourFirstTransaction': 'Добавьте вашу первую транзакцию',
 }; 

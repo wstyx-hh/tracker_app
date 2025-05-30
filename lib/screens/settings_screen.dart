@@ -127,14 +127,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const Divider(height: 1),
             _buildProfileSection(),
             const SizedBox(height: 24),
-            Card(
-              elevation: 2,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: const ThemeSelector(),
-            ),
-            const SizedBox(height: 24),
             _buildSection(
               title: l10n.preferences,
               icon: Icons.settings_outlined,

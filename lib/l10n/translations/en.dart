@@ -17,7 +17,6 @@ const Map<String, String> en = {
   'addIncome': 'Add Income',
   'total': 'Total',
   'balance': 'Balance',
-  'darkMode': 'Dark Mode',
   'currency': 'Currency',
   'appTheme': 'App Theme',
   'preferences': 'Preferences',
@@ -72,5 +71,10 @@ const Map<String, String> en = {
   'previousMonth': 'Previous Month',
   'nextMonth': 'Next Month',
   'changeDateRange': 'Change Date Range',
-  'leftFromIncomes': 'Left from incomes'
+  'leftFromIncomes': 'Left from incomes',
+  'lightMode': 'Light Mode',
+  'darkMode': 'Dark Mode',
+  'systemTheme': 'System Theme',
+  'themeChanged': 'Theme changed',
+  'addYourFirstTransaction': 'Add your first transaction'
 }; 
