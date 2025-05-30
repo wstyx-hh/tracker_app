@@ -8,9 +8,14 @@ import 'providers/locale_provider.dart';
 import 'l10n/app_localizations.dart';
 import 'l10n/app_localizations_delegate.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'services/isar_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize Isar
+  await IsarService().initialize();
+  
   runApp(const MyApp());
 }
 

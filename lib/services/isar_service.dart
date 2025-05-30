@@ -14,9 +14,12 @@ class IsarService {
   IsarService._internal();
 
   static Isar? _isar;
+  String? _cachedAccountName;
+  bool _isInitialized = false;
 
-  Future<Isar> get isar async {
-    if (_isar != null) return _isar!;
+  Future<void> initialize() async {
+    if (_isInitialized) return;
+    
     final dir = await getApplicationDocumentsDirectory();
     _isar = await Isar.open([
       IncomeSchema,
@@ -25,6 +28,15 @@ class IsarService {
       AccountTransactionSchema,
       BudgetSchema,
     ], directory: dir.path);
+    
+    // Предзагрузка часто используемых данных
+    _cachedAccountName = await _getAccountNameInternal();
+    _isInitialized = true;
+  }
+
+  Future<Isar> get isar async {
+    if (_isar != null) return _isar!;
+    await initialize();
     return _isar!;
   }
 
@@ -84,6 +96,7 @@ class IsarService {
       await db.accounts.clear();
       await db.budgets.clear();
     });
+    _cachedAccountName = null;
   }
 
   Future<String> exportData() async {
@@ -119,6 +132,7 @@ class IsarService {
       await db.expenseHives.putAll(expenses);
       await db.accounts.putAll(accounts);
     });
+    _cachedAccountName = null;
   }
 
   // ACCOUNT TRANSACTIONS
@@ -154,12 +168,19 @@ class IsarService {
       acc.name = name;
       await db.writeTxn(() => db.accounts.put(acc));
     }
+    _cachedAccountName = name;
   }
 
-  Future<String> getAccountName() async {
+  Future<String> _getAccountNameInternal() async {
     final db = await isar;
     final acc = await db.accounts.get(0);
     return acc?.name ?? 'Account';
+  }
+
+  Future<String> getAccountName() async {
+    if (_cachedAccountName != null) return _cachedAccountName!;
+    _cachedAccountName = await _getAccountNameInternal();
+    return _cachedAccountName!;
   }
 
   // BUDGETS

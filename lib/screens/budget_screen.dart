@@ -130,6 +130,54 @@ class _BudgetScreenState extends State<BudgetScreen> {
     );
   }
 
+  void _showEditBudgetDialog(Budget budget) {
+    final editController = TextEditingController(text: budget.limit.toString());
+    final l10n = AppLocalizations.of(context);
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.enterLimit),
+        content: TextField(
+          controller: editController,
+          keyboardType: TextInputType.number,
+          decoration: InputDecoration(
+            labelText: l10n.amount,
+            prefixIcon: const Icon(Icons.attach_money),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(l10n.cancel),
+          ),
+          TextButton(
+            onPressed: () async {
+              final newLimit = double.tryParse(editController.text);
+              if (newLimit == null || newLimit <= 0) {
+                _showError('Please enter a valid limit');
+                return;
+              }
+              budget.limit = newLimit;
+              await IsarService().updateBudget(budget);
+              if (mounted) {
+                Navigator.pop(context);
+                setState(() {});
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(l10n.themeChanged),
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              }
+            },
+            child: Text(l10n.save),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -264,11 +312,22 @@ class _BudgetScreenState extends State<BudgetScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              l10n.totalMonthlyLimit,
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  l10n.totalMonthlyLimit,
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                if (allBudget.isNotEmpty)
+                  IconButton(
+                    icon: const Icon(Icons.edit_outlined),
+                    onPressed: () => _showEditBudgetDialog(allBudget.first),
+                    tooltip: l10n.edit,
+                  ),
+              ],
             ),
             const SizedBox(height: 16),
             if (allBudget.isEmpty)
@@ -297,10 +356,13 @@ class _BudgetScreenState extends State<BudgetScreen> {
                 keyboardType: TextInputType.number,
               )
             else
-              _buildBudgetProgress(
-                spent: totalSpent,
-                limit: allBudget.first.limit,
-                theme: theme,
+              InkWell(
+                onTap: () => _showEditBudgetDialog(allBudget.first),
+                child: _buildBudgetProgress(
+                  spent: totalSpent,
+                  limit: allBudget.first.limit,
+                  theme: theme,
+                ),
               ),
           ],
         ),
@@ -490,56 +552,97 @@ class _BudgetScreenState extends State<BudgetScreen> {
         const SizedBox(height: 16),
         ...categoryBudgets.map((budget) {
           final spent = spentByCategory[budget.category] ?? 0;
-          return Card(
-            elevation: 2,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
+          return _buildCategoryBudgetCard(budget, spent);
+        }),
+      ],
+    );
+  }
+
+  Widget _buildCategoryBudgetCard(Budget budget, double spent) {
+    final theme = Theme.of(context);
+    final progress = spent / budget.limit;
+    final isExceeded = progress > 1;
+    final l10n = AppLocalizations.of(context);
+    
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: InkWell(
+        onTap: () => _showEditBudgetDialog(budget),
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Row(
                     children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.primary.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Icon(
-                          _categoryIcons[budget.category] ?? Icons.category_outlined,
-                          color: theme.colorScheme.primary,
-                        ),
+                      Icon(
+                        _categoryIcons[budget.category] ?? Icons.category_outlined,
+                        color: theme.colorScheme.primary,
                       ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Text(
-                          budget.category,
-                          style: theme.textTheme.titleMedium,
+                      const SizedBox(width: 12),
+                      Text(
+                        budget.category,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
                         ),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.delete_outline),
-                        onPressed: () async {
-                          await IsarService().deleteBudget(budget.id);
-                          setState(() {});
-                        },
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
-                  _buildBudgetProgress(
-                    spent: spent,
-                    limit: budget.limit,
-                    theme: theme,
+                  IconButton(
+                    icon: const Icon(Icons.edit_outlined),
+                    onPressed: () => _showEditBudgetDialog(budget),
+                    tooltip: l10n.edit,
                   ),
                 ],
               ),
-            ),
-          );
-        }),
-      ],
+              const SizedBox(height: 16),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: LinearProgressIndicator(
+                  value: progress,
+                  backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
+                  valueColor: AlwaysStoppedAnimation(
+                    isExceeded ? theme.colorScheme.error : theme.colorScheme.primary,
+                  ),
+                  minHeight: 8,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '${l10n.spent}: \$${spent.toStringAsFixed(2)}',
+                    style: theme.textTheme.bodyMedium,
+                  ),
+                  Text(
+                    '${l10n.limit}: \$${budget.limit.toStringAsFixed(2)}',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+              if (isExceeded) ...[
+                const SizedBox(height: 8),
+                Text(
+                  '${l10n.limitExceeded} \$${(spent - budget.limit).toStringAsFixed(2)}',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.error,
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
     );
   }
 
